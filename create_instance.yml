@@ -1,0 +1,8 @@
+- hosts: localhost
+  connection: local
+  gather_facts: False
+
+  tasks:
+    - include_vars: vars/main.yaml
+    - include: tasks/prepare_create_instance.yaml
+    - include: tasks/create_instance.yaml

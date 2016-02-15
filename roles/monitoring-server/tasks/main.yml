@@ -1,0 +1,55 @@
+---
+ - name: install erlang server dependence
+   apt: name="erlang-nox" state=present
+
+ - name: install rabbitmq dependence
+   apt_key: url="http://www.rabbitmq.com/rabbitmq-signing-key-public.asc" state=present
+
+ - name: install rabbitmq repo
+   apt_repository: repo='deb http://www.rabbitmq.com/debian/ testing main' state=present
+
+ - name: install dependents
+   apt: name={{ item }} state=present
+   with_items:
+     - erlang-nox
+     - rabbitmq-server
+     - redis-server
+     - uchiwa
+
+ - name: generate uchiwa config
+   template:
+     src=uchiwa.json.j2
+     dest=/etc/sensu/uchiwa.json
+     owner=sensu
+     group=sensu
+     mode=0640
+     backup=yes
+
+  # we can use rabbitmq external plugin
+ - shell: rabbitmqctl add_vhost /sensu
+   ignore_errors: yes
+ - shell: rabbitmqctl add_user sensu supersecret
+   ignore_errors: yes
+ - shell: rabbitmqctl set_permissions -p /sensu sensu ".*" ".*" ".*"
+   ignore_errors: yes
+
+ - name: copy all the checks config files
+   copy:
+     src={{ item }}
+     dest=/etc/sensu/conf.d/
+     owner="sensu"
+     group="sensu"
+     mode=0640
+   with_items:
+    - check-disk.json
+    - check-mem.json
+    - check-cpu.json
+
+ - name: start rmq
+   service: name={{ item }} state=started
+   with_items:
+    - rabbitmq-server
+    - redis-server
+    - sensu-server
+    - sensu-api
+    - uchiwa

@@ -1,0 +1,11 @@
+{
+  "checks": {
+    "diskspace": {
+      "command": "/etc/sensu/plugins/check-disk.py /",
+      "interval": 60,
+      "subscribers": [
+        "test"
+      ]
+    }
+  }
+}

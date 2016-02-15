@@ -1,0 +1,20 @@
+---
+
+- name: Install server and client
+  hosts:
+    - tag_Name_Monitor
+  sudo: true
+  roles:
+   - monitoring-client
+   - monitoring-server
+
+
+- name: Install only clients
+  hosts:
+    - tag_Name_Redis
+    - tag_Name_Proxy
+    - tag_Name_BlogApp
+    - tag_Name_AdminApp
+  sudo: true
+  roles:
+   - monitoring-client

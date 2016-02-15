@@ -1,0 +1,23 @@
+---
+
+- name: Configure Redis
+  sudo: true
+  hosts:
+    - tag_Name_Redis
+  roles:
+    - redis-host
+
+- name: Configure Django
+  sudo: true
+  hosts:
+    - tag_Name_AdminApp
+    - tag_Name_BlogApp
+  roles:
+    - django-host
+
+- name: Configure Nginx
+  sudo: true
+  hosts:
+    - tag_Name_Proxy
+  roles:
+    - nginx-host

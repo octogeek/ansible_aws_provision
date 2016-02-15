@@ -1,0 +1,61 @@
+- name: create ec2 instances
+  ec2:
+    group: ['Common-sec','{{ item.name }}-sec']
+    instance_type: "{{ instance_type }}"
+    image: "{{ image }}"
+    region: "{{ aws_region }}"
+    assign_public_ip: yes
+    key_name: "{{ key_name }}"
+    vpc_subnet_id: "{{ web_subnet_id }}"
+    wait: yes
+    exact_count: 1
+    count_tag:
+      Name: "{{ item.name }}"
+    instance_tags:
+        Name: "{{ item.name }}"
+    private_ip: "{{ item.private_ip }}"
+  with_items:
+    - name: Proxy
+      private_ip: "10.1.10.10"
+    - name: Monitor
+      private_ip: "10.1.10.20"
+    - name: Redis
+      private_ip: "10.1.10.30"
+    - name: AdminApp
+      private_ip: "10.1.10.40"
+    - name: BlogApp
+      private_ip: "10.1.10.50"
+  register: ec2
+
+- name: Add to host group
+  add_host:
+    hostname: "{{ item.tagged_instances[0].public_ip }}"
+    groups: "tag_Name_{{ item.item.name }}"
+  with_items: ec2.results
+
+- name: Start the rds_subnet
+  rds_subnet_group:
+    state: present
+    name: "rds_subnet"
+    description: RDS subnet
+    region: "{{ aws_region }}"
+    subnets:
+      - "{{ info_vpc.subnets[0].id }}"
+      - "{{ info_vpc.subnets[1].id }}"
+  register: rds_subnet_data
+
+- name: start the RDS instance
+  rds:
+    command: create
+    region: "{{ aws_region }}"
+    instance_name: "{{ database_name }}"
+    db_engine: "{{ db_engine }}"
+    size: "{{ size|default('10') }}"
+    port: 3306
+    instance_type: "{{ database_instance_type }}"
+    db_name: "{{ db_name|default('my_db_name') }}"
+    username: "{{ database_login }}"
+    password: "{{ database_secret }}"
+    subnet: "rds_subnet"
+    vpc_security_groups: "{{ rds_securitygroup.group_id }}"
+  register: rds_data

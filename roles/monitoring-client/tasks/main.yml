@@ -1,0 +1,49 @@
+---
+ - name: install apt_key
+   apt_key: "url=http://repos.sensuapp.org/apt/pubkey.gpg state=present"
+
+ - name: install repo
+   apt_repository: repo='deb http://repos.sensuapp.org/apt sensu main' state=present
+
+ - name: install dependens
+   apt: name={{ item }} state=present
+   with_items:
+     - make
+     - wget
+     - curl
+     - git
+     - rsync
+     - sensu
+     - ruby
+     - python-pip
+
+ - name: copy all the checks files
+   copy:
+     src={{ item }}
+     dest=/etc/sensu/plugins/
+     owner="sensu"
+     group="sensu"
+     mode=0750
+   with_items:
+    - check-disk.py
+    - check-mem.sh
+    - check-cpu.py
+
+ - name: generate client config files
+   template:
+     src=client.json.j2
+     dest=/etc/sensu/conf.d/client.json
+     owner=sensu
+     group=sensu
+     mode=0640
+     backup=yes
+
+ - name: generate rmq config files
+   template:
+     src=config.json.j2
+     dest=/etc/sensu/config.json
+     owner=sensu
+     group=sensu
+     mode=0640
+     backup=yes
+   notify: restart sensu client
